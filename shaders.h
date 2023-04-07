@@ -15,6 +15,7 @@ class Shader
     char* loadFile(const std::string path);
     bool checkCompil(GLuint program, const std::string path);
     bool checkLink(GLuint program);
+    std::string includeFile(const std::string line, const std::string shaderPath);
 
     public :
 

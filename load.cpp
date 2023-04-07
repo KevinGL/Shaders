@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <conio.h>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -41,7 +42,7 @@ bool Shader::Load(const std::string path)
         geoShader = true;
     }
 
-    fragmentSource=loadFile(cheminFragmentShader);
+    fragmentSource = loadFile(cheminFragmentShader);
     if(fragmentSource == nullptr)
     {
         std::cout << "Error loading '" << cheminFragmentShader << "', press a key to quit" << std::endl;
@@ -160,7 +161,7 @@ bool Shader::Load(const std::string path)
 char* Shader::loadFile(const std::string path)
 {
     unsigned int tailleFichier;
-    char *contenuFichier;
+    std::string contenuFichier;
 
     std::ifstream fichier(path.c_str(), std::ios::binary);
 
@@ -173,7 +174,75 @@ char* Shader::loadFile(const std::string path)
     tailleFichier = fichier.tellg();
     fichier.seekg(0, fichier.beg);
 
-    contenuFichier = (char*)malloc(tailleFichier+1);
+    /*fichier.read(contenuFichier, tailleFichier);
+
+    contenuFichier[tailleFichier] = '\0';*/
+
+    contenuFichier = "";
+
+    while(1)
+    {
+        std::string ligne;
+
+        if(!getline(fichier, ligne))
+        {
+            break;
+        }
+
+        if(ligne.find("$") == 0)
+        {
+            /*strcat(contenuFichier, includeFile(ligne, path).c_str());
+            strcat(contenuFichier, "\n");*/
+
+            contenuFichier += includeFile(ligne, path) + "\n";
+        }
+        else
+        {
+            /*strcat(contenuFichier, ligne.c_str());
+            strcat(contenuFichier, "\n");*/
+
+            contenuFichier += ligne + "\n";
+        }
+    }
+
+    fichier.close();
+
+    char *contenuChar = (char*)malloc(contenuFichier.length());
+
+    strcpy(contenuChar, contenuFichier.c_str());
+
+    return contenuChar;
+}
+
+std::string Shader::includeFile(const std::string line, const std::string shaderPath)
+{
+    char path[line.length()];
+
+    sscanf(line.c_str(), "$include(\"%s\");", path);
+
+    char *endLine = strrchr(path, '"');
+
+    if(endLine != nullptr)
+    {
+        *endLine = '\0';
+    }
+
+    std::string shaderDir = shaderPath;
+
+    shaderDir.erase(shaderDir.rfind("/"));
+
+    std::ifstream fichier(shaderDir + "/" + path, std::ios::binary);
+
+    if(!fichier)
+    {
+        return "";
+    }
+
+    fichier.seekg(0, fichier.end);
+    unsigned int tailleFichier = fichier.tellg();
+    fichier.seekg(0, fichier.beg);
+
+    char *contenuFichier = (char*)malloc(tailleFichier+1);
 
     fichier.read(contenuFichier, tailleFichier);
 
@@ -181,7 +250,7 @@ char* Shader::loadFile(const std::string path)
 
     fichier.close();
 
-    return contenuFichier;
+    return std::string(contenuFichier);
 }
 
 bool Shader::checkCompil(GLuint program, const std::string path)
